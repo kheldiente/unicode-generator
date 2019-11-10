@@ -13,7 +13,7 @@ const hexCodes = [
 ]
 
 const execBtns = [
-    "Convert", "Reset"
+    "Convert", "Delete", "Reset"
 ]
 
 let selectedModePos = 0
@@ -53,9 +53,20 @@ function addButtons() {
                 tr.appendChild(eTd)
             }
 
-            // Reset button
-            if (i == hexCodes.length - 1 && j == hexCodeSet.length - 1) {
+            // Delete button
+            if (i == 3 && j == hexCodeSet.length - 1) {
                 const label = execBtns[1]
+                const eTd = document.createElement("td")
+                const eBtn = document.createElement("button")
+                eBtn.className = "delete-btn"
+                eBtn.innerHTML = label
+                eTd.appendChild(eBtn)
+                tr.appendChild(eTd)
+            }
+
+            // Reset button
+            if (i == 4 && j == hexCodeSet.length - 1) {
+                const label = execBtns[2]
                 const eTd = document.createElement("td")
                 const eBtn = document.createElement("button")
                 eBtn.className = "reset-btn"
@@ -76,11 +87,14 @@ function addModes() {
     const tbody = document.createElement("tbody")
     const tr = document.createElement("tr")
     table.style.width = "100%"
+    tr.align = "center"
 
     for (let i = 0;i < modes.length;i++) {
         const mode = modes[i]
         const td = document.createElement("td")
         const button = document.createElement("button")
+
+        td.style.width = "30px"
         button.id = "modeBtn" + i
         button.value = i
         button.innerHTML = mode

@@ -19,9 +19,8 @@ body {
     background-color: whitesmoke;
     color: black;
     padding: 10px;
-    border-style: solid;
-    border-width: 1px;
-    border-color: black;
+    display: block;
+    margin: 0px;
 }
 
 .mode-view {
@@ -58,6 +57,17 @@ body {
     color: whitesmoke;
     outline: 0;
     padding: 10px 20px;
+    display: inline-block;
+    width: 80px;
+}
+
+.delete-btn {
+    background-color: cadetblue;
+    color: whitesmoke;
+    outline: 0;
+    padding: 10px 20px;
+    display: inline-block;
+    width: 80px;
 }
 
 .reset-btn {
@@ -65,4 +75,6 @@ body {
     color: whitesmoke;
     outline: 0;
     padding: 10px 20px;
+    display: inline-block;
+    width: 80px;
 }

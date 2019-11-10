@@ -32,7 +32,7 @@ function computeUTF8(hexCode) {
         const range = utf8Ranges[i]
         const startDecimal = range[0]
         const endDecimal = range[1]
-        if (computedDecimal >= startDecimal && endDecimal) {
+        if (computedDecimal >= startDecimal && computedDecimal <= endDecimal) {
             computedRange = range
             break
         }
@@ -41,9 +41,10 @@ function computeUTF8(hexCode) {
     expectedNoOfBytes = computedRange[2]
 
     let result = ""
+    let bit8FromDecimal = []
+
     for (let j = 0;j < hexCode.length;j+=2) {
         let hex2Vals = hexCode.substring(j, j + 2)
-        let bit8FromDecimal = []
 
         if (hex2Vals === "00") {
             continue
@@ -54,30 +55,35 @@ function computeUTF8(hexCode) {
             let bit4FromDecimal = decimalTo4bit(hex2Decimal)
             bit8FromDecimal = bit8FromDecimal.concat(bit4FromDecimal)
         }
+    }
+    console.log("bit8FromDecimal: %o", bit8FromDecimal)
+
+    // Map 8 bits from decimal
+    if (expectedNoOfBytes === 1) {
+        computedBytes.push(0)
         
-        if (expectedNoOfBytes === 1) {
-            computedBytes.push(0)
-            
-            let startIndex = 8 - (8 - computedBytes.length)
-            while (computedBytes.length < 8) {
-                computedBytes.push(bit8FromDecimal[startIndex])
-                startIndex++
-            }
-            console.log("computedBytes: %o", computedBytes)
-            
-            let startComputedByteIndex = 4
-            while (startComputedByteIndex > -1) {
-                let bits = Object.assign([], computedBytes)
-                bits.splice(startComputedByteIndex, 4)
-
-                const hexLetter = bit4ToDecimal(bits)
-                result = result.concat(hexLetter)
-
-                console.log("bits: %o", bits)
-                console.log("hexLetter: %s", hexLetter)
-                startComputedByteIndex -= 4
-            }
+        // Create 1 byte
+        let startIndex = 8 - (8 - computedBytes.length)
+        while (computedBytes.length < 8) {
+            computedBytes.push(bit8FromDecimal[startIndex])
+            startIndex++
         }
+        
+        // Get the equivalent hex letter.
+        // Compute every 4 bits
+        let startComputedByteIndex = 4
+        while (startComputedByteIndex > -1) {
+            let bits = Object.assign([], computedBytes)
+            bits.splice(startComputedByteIndex, 4)
+
+            const hexLetter = bit4ToDecimal(bits)
+            result = result.concat(hexLetter)
+
+            startComputedByteIndex -= 4
+        }
+    } else if (expectedNoOfBytes === 2) {
+        computedBytes.push(1)
+        computedBytes.push(0)
     }
     console.log("result: %s", result)
     return result
@@ -95,18 +101,23 @@ function computeUTF32(hexCode) {
 
 function hexToDecimal(hexCode) {
     let decimal = 0
-    const singleHexDecimals = [] // Should only have numbers
-    // Get decimal for each hex character
+    let startExp = hexCode.length - 1
     for (let i = 0;i < hexCode.length;i++) {
         const singleHex = hexCode[i]
+        let decimalEquivalent = 0
+
         if (isValidHexNumber(singleHex)) {
-            singleHexDecimals.push(parseInt(singleHex))
+            decimalEquivalent = parseInt(singleHex)
         } else if (isValidHexLetter(singleHex)) {
-            singleHexDecimals.push(hexLetterToDecimal(singleHex))
+            decimalEquivalent = hexLetterToDecimal(singleHex)
         }
+
+        const multiplier = Math.pow(16, startExp)
+        const product = decimalEquivalent * multiplier
+        startExp = startExp - 1
+        decimal += product
     }
-    console.log("hexToDecimal values: %o", singleHexDecimals)
-    return singleHexDecimals.reduce((a, b) => a + b, 0)    
+    return decimal
 }
 
 /**
