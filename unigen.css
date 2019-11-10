@@ -1,0 +1,68 @@
+body {
+    background-color: powderblue;
+}
+
+.centered-content {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+}
+
+.text {
+    color: white
+}
+
+.console-view {
+    background-color: whitesmoke;
+    color: black;
+    padding: 10px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+}
+
+.mode-view {
+    margin-top: 10px;
+}
+
+.hexbutton-view {
+    margin-top: 10px
+}
+
+.mode-selected-btn {
+    background-color: cornflowerblue;
+    color: white;
+    outline: 0;
+    padding: 10px;
+}
+
+.mode-unselected-btn {
+    background-color: cadetblue;
+    color: white;
+    outline: 0;
+    padding: 10px;
+}
+
+.hex-code-btn {
+    background-color: burlywood;
+    color: whitesmoke;
+    outline: 0;
+    padding: 10px 20px;
+}
+
+.convert-btn {
+    background-color: red;
+    color: whitesmoke;
+    outline: 0;
+    padding: 10px 20px;
+}
+
+.reset-btn {
+    background-color: cadetblue;
+    color: whitesmoke;
+    outline: 0;
+    padding: 10px 20px;
+}
