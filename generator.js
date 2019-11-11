@@ -3,16 +3,27 @@
 // - last code point in decimal
 // - number of bytes
 const utf8Ranges = [
-    [0, 127, 1], // 0000 - 007F, 0xxxxxxx
-    [128, 2047, 2], // 0080 - 07FF, 110xxxxx 10xxxxxx
-    [2048, 65535, 3], // 0800 - FFFF, 1110xxxx 10xxxxxx 10xxxxxx
-    [65536, 2097151, 4] // 10000 - 1FFFFF, 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    [0, 127, 1], // 0000 - 007F
+    [128, 2047, 2], // 0080 - 07FF
+    [2048, 65535, 3], // 0800 - FFFF
+    [65536, 2097151, 4] // 10000 - 1FFFFF
 ]
 
 /**
  * Procedures:
  * 1. Get what range the hex code falls into
- * 2. 
+ * 2. Convert hex to decimal then to bits
+ * 3. Check the number of expected bytes using the range provided
+ * 4. Map the bits from right to left. Beware of bit constants.
+ *      If expected no of bytes === 1:
+ *          - 0xxxxxxx
+ *      Else if expected no of bytes === 2:
+ *          - 110xxxxx 10xxxxxx
+ *      Else if expected no of bytes === 3:
+ *          - 1110xxxx 10xxxxxx 10xxxxxx
+ *      Else if expected no of bytes === 4:
+ *          - 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+ * 5. Convert every 4 bits to hex
  */
 function computeUTF8(hexCode) {
     console.log("computing %s to utf8", hexCode)
@@ -23,7 +34,6 @@ function computeUTF8(hexCode) {
 
     let expectedNoOfBytes = 1
     let computedRange = []
-    let computedBytes = [] // Should be [0, 1, 1, 0, 1]
     const computedDecimal = hexToDecimal(hexCode)
     console.log("computedDecimal: %o", computedDecimal)
 
@@ -42,6 +52,7 @@ function computeUTF8(hexCode) {
 
     let result = ""
     let bit8FromDecimal = []
+    let computedBytes = new Array(8).fill(0) // Should be [0, 1, 1, 0, 1]
 
     for (let j = 0;j < hexCode.length;j+=2) {
         let hex2Vals = hexCode.substring(j, j + 2)
@@ -60,30 +71,57 @@ function computeUTF8(hexCode) {
 
     // Map 8 bits from decimal
     if (expectedNoOfBytes === 1) {
-        computedBytes.push(0)
+        computedBytes = new Array(8).fill(0) // Required number of bytes
+        computedBytes[0] = 0
         
-        // Create 1 byte
-        let startIndex = 8 - (8 - computedBytes.length)
-        while (computedBytes.length < 8) {
-            computedBytes.push(bit8FromDecimal[startIndex])
-            startIndex++
-        }
-        
-        // Get the equivalent hex letter.
-        // Compute every 4 bits
-        let startComputedByteIndex = 4
-        while (startComputedByteIndex > -1) {
-            let bits = Object.assign([], computedBytes)
-            bits.splice(startComputedByteIndex, 4)
-
-            const hexLetter = bit4ToDecimal(bits)
-            result = result.concat(hexLetter)
-
-            startComputedByteIndex -= 4
+        // Create 1st byte
+        let startIndexDest = 1
+        let startIndexSource = 1
+        while (startIndexDest < 8) {
+            computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
+            startIndexDest++
+            startIndexSource++
         }
     } else if (expectedNoOfBytes === 2) {
-        computedBytes.push(1)
-        computedBytes.push(0)
+        computedBytes = new Array(16).fill(0) // Required number of bytes
+        // Assign constant bytes to indices
+        computedBytes[0] = 1
+        computedBytes[1] = 1
+        computedBytes[2] = 0
+        computedBytes[8] = 1
+        computedBytes[9] = 0
+
+        const startIndexOf2ndByte = 8
+        let startIndexDest = 15
+        let startIndexSource = 7
+        while (startIndexSource >= 0) {
+            computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
+            console.log("startIndexDest: %s, startIndexSource: %s", startIndexDest, startIndexSource)
+
+            if (startIndexDest == startIndexOf2ndByte + 2) {
+                startIndexDest -= 3
+            } else {
+                startIndexDest--
+            }
+            startIndexSource--
+        }
+        console.log("computedBytes: %o", computedBytes)
+    }
+
+    // Get the equivalent hex letter.
+    // Compute every 4 bits
+    let bits = Object.assign([], computedBytes)
+    let chunk = 4
+    let bits4 = []
+    let startIndex = 0
+    while (startIndex < bits.length) {
+        bits4 = bits.slice(startIndex, startIndex + chunk)
+        console.log("bits4: %o", bits4)
+
+        const hexLetter = bit4ToDecimal(bits4)
+        result = result.concat(hexLetter)
+
+        startIndex += 4
     }
     console.log("result: %s", result)
     return result

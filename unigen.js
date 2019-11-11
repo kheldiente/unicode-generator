@@ -94,11 +94,12 @@ function addModes() {
         const td = document.createElement("td")
         const button = document.createElement("button")
 
-        td.style.width = "30px"
         button.id = "modeBtn" + i
         button.value = i
         button.innerHTML = mode
         button.addEventListener("click", onClickMode)
+        button.style.width = "70px"
+        button.style.display = "inline-block"
 
         if (i == selectedModePos) {
             button.className = "mode-selected-btn"
