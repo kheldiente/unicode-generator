@@ -98,7 +98,7 @@ function addModes() {
         button.value = i
         button.innerHTML = mode
         button.addEventListener("click", onClickMode)
-        button.style.width = "70px"
+        button.style.width = "75px"
         button.style.display = "inline-block"
 
         if (i == selectedModePos) {
