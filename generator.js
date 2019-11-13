@@ -216,12 +216,29 @@ function computeUTF8(hexCode) {
 
 function computeUTF16(hexCode) {
     console.log("computing %s to utf16", hexCode)
-    return "20AC"
+    return ""
 }
 
+/**
+ * Procedure:
+ * 1. Just return the hex code input
+ * 
+ * @param {string} hexCode - E.g 20AC
+ */
 function computeUTF32(hexCode) {
     console.log("computing %s to utf32", hexCode)
-    return "000020AC"
+    const length = hexCode.length
+    if (length === 0) {
+        return ""
+    }
+
+    const diff = Math.abs(8 - length)
+    let count = diff
+    while (count > 0) {
+        hexCode = "0" + hexCode
+        count--
+    }
+    return hexCode
 }
 
 function hexToDecimal(hexCode) {
