@@ -2,6 +2,11 @@ body {
     background-color: powderblue;
 }
 
+h1, h2 {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 .centered-content {
     display: flex;
     justify-content: center;
@@ -47,7 +52,6 @@ body {
     outline: 0;
     padding: 10px;
     display: inline-block;
-    border: none;
     border-radius: 3px;
 }
 

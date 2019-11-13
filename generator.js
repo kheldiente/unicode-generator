@@ -26,13 +26,34 @@ const utf8Ranges = [
  * 5. Convert every 4 bits to hex
  */
 function computeUTF8(hexCode) {
-    console.log("computing %s to utf8", hexCode)
+    const hasOnlyZeros = /^0*$/.test(hexCode)
+    if (hexCode.length == 0) {
+        console.log("no value. returning input as result")
+        return hexCode
+    }
+    if (hasOnlyZeros) {
+        console.log("hexCode has only zeros. returning input as result")
+        return hexCode
+    }
+    // Normalize hex code. There should be no leading zeros before the actual hex code
+    // E.g 0014 -> 14
+    let isZeros = true
+    let hexCharIndex = 0
+    while (isZeros) {
+        const hexChar = hexCode[hexCharIndex]
+        if (hexChar === "0") {
+            hexCharIndex++
+        } else {
+            isZeros = false
+        }
+    }
+    hexCode = hexCode.substring(hexCharIndex, hexCode.length)
     if ((hexCode.length % 2) == 1) {
-        console.log("hexCode size should be even", hexCode)
         hexCode = "0" + hexCode
     }
 
-    let expectedNoOfBytes = 1
+    console.log("computing %s to utf8", hexCode)
+
     let computedRange = []
     const computedDecimal = hexToDecimal(hexCode)
     console.log("computedDecimal: %o", computedDecimal)
@@ -47,20 +68,12 @@ function computeUTF8(hexCode) {
             break
         }
     }
+
     console.log("computedRange: %o", computedRange)
-    expectedNoOfBytes = computedRange[2]
-
-    let result = ""
+    const expectedNoOfBytes = computedRange[2]
     let bit8FromDecimal = []
-    let computedBytes = new Array(8).fill(0) // Should be [0, 1, 1, 0, 1]
-
     for (let j = 0;j < hexCode.length;j+=2) {
         let hex2Vals = hexCode.substring(j, j + 2)
-
-        if (hex2Vals === "00") {
-            continue
-        }
-
         for (let k = 0;k < 2;k++) {
             let hex2Decimal = hexToDecimal(hex2Vals[k])
             let bit4FromDecimal = decimalTo4bit(hex2Decimal)
@@ -69,28 +82,31 @@ function computeUTF8(hexCode) {
     }
     console.log("bit8FromDecimal: %o", bit8FromDecimal)
 
+    let result = ""
+    let computedBits = new Array(8).fill(0) // Should be [0, 1, 1, 0, 1] format
     // Map 8 bits from decimal
     if (expectedNoOfBytes === 1) {
-        computedBytes = new Array(8).fill(0) // Required number of bits
-        computedBytes[0] = 0
+        // Assign constant bits to indices
+        computedBits = new Array(8).fill(0) 
+        computedBits[0] = 0
         
         let startIndexDest = 7
         let startIndexSource = 7
         const lastIndexDest = 0
 
         while (startIndexSource > lastIndexDest) {
-            computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
+            computedBits[startIndexDest] = bit8FromDecimal[startIndexSource]
             startIndexDest--
             startIndexSource--
         }
     } else if (expectedNoOfBytes === 2) {
-        computedBytes = new Array(16).fill(0) // Required number of bits
         // Assign constant bits to indices
-        computedBytes[0] = 1
-        computedBytes[1] = 1
-        computedBytes[2] = 0
-        computedBytes[8] = 1
-        computedBytes[9] = 0
+        computedBits = new Array(16).fill(0) 
+        computedBits[0] = 1
+        computedBits[1] = 1
+        computedBits[2] = 0
+        computedBits[8] = 1
+        computedBits[9] = 0
 
         const startIndexOf2ndByte = 8
         const lastIndexDest = 2
@@ -98,9 +114,7 @@ function computeUTF8(hexCode) {
         let startIndexSource = 7
 
         while (startIndexSource > lastIndexDest) {
-            computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
-            console.log("startIndexDest: %s, startIndexSource: %s", startIndexDest, startIndexSource)
-
+            computedBits[startIndexDest] = bit8FromDecimal[startIndexSource]
             if (startIndexDest == startIndexOf2ndByte + 2) {
                 startIndexDest -= 3
             } else {
@@ -108,18 +122,18 @@ function computeUTF8(hexCode) {
             }
             startIndexSource--
         }
-        console.log("computedBytes: %o", computedBytes)
+        console.log("computedBytes: %o", computedBits)
     } else if (expectedNoOfBytes === 3) {
-        computedBytes = new Array(24).fill(0) // Required number of bits
         // Assign constant bits to indices
-        computedBytes[0] = 1
-        computedBytes[1] = 1
-        computedBytes[2] = 1
-        computedBytes[3] = 0
-        computedBytes[8] = 1
-        computedBytes[9] = 0
-        computedBytes[16] = 1
-        computedBytes[17] = 0
+        computedBits = new Array(24).fill(0) 
+        computedBits[0] = 1
+        computedBits[1] = 1
+        computedBits[2] = 1
+        computedBits[3] = 0
+        computedBits[8] = 1
+        computedBits[9] = 0
+        computedBits[16] = 1
+        computedBits[17] = 0
 
         const startIndexOf2ndByte = 8
         const startIndexOf3rdByte = 16
@@ -128,9 +142,7 @@ function computeUTF8(hexCode) {
         let startIndexSource = 15
 
         while (startIndexSource > lastIndexDest) {
-            computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
-            console.log("startIndexDest: %s, startIndexSource: %s", startIndexDest, startIndexSource)
-
+            computedBits[startIndexDest] = bit8FromDecimal[startIndexSource]
             if (startIndexDest == startIndexOf2ndByte + 2
                 || startIndexDest == startIndexOf3rdByte + 2) {
                 startIndexDest -= 3
@@ -141,19 +153,19 @@ function computeUTF8(hexCode) {
             startIndexSource--
         }
     } else if (expectedNoOfBytes === 4) {
-        computedBytes = new Array(32).fill(0) // Required number of bits
         // Assign constant bits to indices
-        computedBytes[0] = 1
-        computedBytes[1] = 1
-        computedBytes[2] = 1
-        computedBytes[3] = 1
-        computedBytes[4] = 0
-        computedBytes[8] = 1
-        computedBytes[9] = 0
-        computedBytes[16] = 1
-        computedBytes[17] = 0
-        computedBytes[24] = 1
-        computedBytes[25] = 0
+        computedBits = new Array(32).fill(0) 
+        computedBits[0] = 1
+        computedBits[1] = 1
+        computedBits[2] = 1
+        computedBits[3] = 1
+        computedBits[4] = 0
+        computedBits[8] = 1
+        computedBits[9] = 0
+        computedBits[16] = 1
+        computedBits[17] = 0
+        computedBits[24] = 1
+        computedBits[25] = 0
 
         const startIndexOf2ndByte = 8
         const startIndexOf3rdByte = 16
@@ -163,9 +175,7 @@ function computeUTF8(hexCode) {
         let startIndexSource = 23
 
         while (startIndexSource > lastIndexDest) {
-            computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
-            console.log("startIndexDest: %s, startIndexSource: %s", startIndexDest, startIndexSource)
-
+            computedBits[startIndexDest] = bit8FromDecimal[startIndexSource]
             if (startIndexDest == startIndexOf2ndByte + 2
                 || startIndexDest == startIndexOf3rdByte + 2
                 ||  startIndexDest == startIndexOf4thByte + 2) {
@@ -176,11 +186,14 @@ function computeUTF8(hexCode) {
 
             startIndexSource--
         }
+    } else {
+        return "-1"
     }
+
 
     // Get the equivalent hex letter.
     // Compute every 4 bits
-    let bits = Object.assign([], computedBytes)
+    let bits = Object.assign([], computedBits)
     let chunk = 4
     let bits4 = []
     let startIndex = 0
@@ -193,7 +206,6 @@ function computeUTF8(hexCode) {
 
         startIndex += 4
     }
-    console.log("result: %s", result)
     return result
 }
 
