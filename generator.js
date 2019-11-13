@@ -29,7 +29,7 @@ function computeUTF8(hexCode) {
     console.log("computing %s to utf8", hexCode)
     if ((hexCode.length % 2) == 1) {
         console.log("hexCode size should be even", hexCode)
-        return false
+        hexCode = "0" + hexCode
     }
 
     let expectedNoOfBytes = 1
@@ -71,20 +71,21 @@ function computeUTF8(hexCode) {
 
     // Map 8 bits from decimal
     if (expectedNoOfBytes === 1) {
-        computedBytes = new Array(8).fill(0) // Required number of bytes
+        computedBytes = new Array(8).fill(0) // Required number of bits
         computedBytes[0] = 0
         
-        // Create 1st byte
-        let startIndexDest = 1
-        let startIndexSource = 1
-        while (startIndexDest < 8) {
+        let startIndexDest = 7
+        let startIndexSource = 7
+        const lastIndexDest = 0
+
+        while (startIndexSource > lastIndexDest) {
             computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
-            startIndexDest++
-            startIndexSource++
+            startIndexDest--
+            startIndexSource--
         }
     } else if (expectedNoOfBytes === 2) {
-        computedBytes = new Array(16).fill(0) // Required number of bytes
-        // Assign constant bytes to indices
+        computedBytes = new Array(16).fill(0) // Required number of bits
+        // Assign constant bits to indices
         computedBytes[0] = 1
         computedBytes[1] = 1
         computedBytes[2] = 0
@@ -92,9 +93,11 @@ function computeUTF8(hexCode) {
         computedBytes[9] = 0
 
         const startIndexOf2ndByte = 8
+        const lastIndexDest = 2
         let startIndexDest = 15
         let startIndexSource = 7
-        while (startIndexSource >= 0) {
+
+        while (startIndexSource > lastIndexDest) {
             computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
             console.log("startIndexDest: %s, startIndexSource: %s", startIndexDest, startIndexSource)
 
@@ -107,8 +110,8 @@ function computeUTF8(hexCode) {
         }
         console.log("computedBytes: %o", computedBytes)
     } else if (expectedNoOfBytes === 3) {
-        computedBytes = new Array(24).fill(0) // Required number of bytes
-        // Assign constant bytes to indices
+        computedBytes = new Array(24).fill(0) // Required number of bits
+        // Assign constant bits to indices
         computedBytes[0] = 1
         computedBytes[1] = 1
         computedBytes[2] = 1
@@ -120,14 +123,52 @@ function computeUTF8(hexCode) {
 
         const startIndexOf2ndByte = 8
         const startIndexOf3rdByte = 16
+        const lastIndexDest = 3
         let startIndexDest = 23
         let startIndexSource = 15
-        while (startIndexSource >= 0) {
+
+        while (startIndexSource > lastIndexDest) {
             computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
             console.log("startIndexDest: %s, startIndexSource: %s", startIndexDest, startIndexSource)
 
-            if (startIndexDest == startIndexOf3rdByte + 2
-                || startIndexDest == startIndexOf2ndByte + 2) {
+            if (startIndexDest == startIndexOf2ndByte + 2
+                || startIndexDest == startIndexOf3rdByte + 2) {
+                startIndexDest -= 3
+            } else {
+                startIndexDest--
+            }
+
+            startIndexSource--
+        }
+    } else if (expectedNoOfBytes === 4) {
+        computedBytes = new Array(32).fill(0) // Required number of bits
+        // Assign constant bits to indices
+        computedBytes[0] = 1
+        computedBytes[1] = 1
+        computedBytes[2] = 1
+        computedBytes[3] = 1
+        computedBytes[4] = 0
+        computedBytes[8] = 1
+        computedBytes[9] = 0
+        computedBytes[16] = 1
+        computedBytes[17] = 0
+        computedBytes[24] = 1
+        computedBytes[25] = 0
+
+        const startIndexOf2ndByte = 8
+        const startIndexOf3rdByte = 16
+        const startIndexOf4thByte = 24
+        const lastIndexDest = 4
+        let startIndexDest = 31
+        let startIndexSource = 23
+
+        while (startIndexSource > lastIndexDest) {
+            computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
+            console.log("startIndexDest: %s, startIndexSource: %s", startIndexDest, startIndexSource)
+
+            if (startIndexDest == startIndexOf2ndByte + 2
+                || startIndexDest == startIndexOf3rdByte + 2
+                ||  startIndexDest == startIndexOf4thByte + 2) {
                 startIndexDest -= 3
             } else {
                 startIndexDest--
