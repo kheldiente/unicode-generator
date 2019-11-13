@@ -106,6 +106,35 @@ function computeUTF8(hexCode) {
             startIndexSource--
         }
         console.log("computedBytes: %o", computedBytes)
+    } else if (expectedNoOfBytes === 3) {
+        computedBytes = new Array(24).fill(0) // Required number of bytes
+        // Assign constant bytes to indices
+        computedBytes[0] = 1
+        computedBytes[1] = 1
+        computedBytes[2] = 1
+        computedBytes[3] = 0
+        computedBytes[8] = 1
+        computedBytes[9] = 0
+        computedBytes[16] = 1
+        computedBytes[17] = 0
+
+        const startIndexOf2ndByte = 8
+        const startIndexOf3rdByte = 16
+        let startIndexDest = 23
+        let startIndexSource = 15
+        while (startIndexSource >= 0) {
+            computedBytes[startIndexDest] = bit8FromDecimal[startIndexSource]
+            console.log("startIndexDest: %s, startIndexSource: %s", startIndexDest, startIndexSource)
+
+            if (startIndexDest == startIndexOf3rdByte + 2
+                || startIndexDest == startIndexOf2ndByte + 2) {
+                startIndexDest -= 3
+            } else {
+                startIndexDest--
+            }
+
+            startIndexSource--
+        }
     }
 
     // Get the equivalent hex letter.
