@@ -9,6 +9,15 @@ const utf8Ranges = [
     [65536, 2097151, 4] // 10000 - 1FFFFF
 ]
 
+// Format: 
+// - start code point in decimal
+// - last code point in decimal
+// - 0 == return, 1 == compute
+const utf16Ranges = [
+    [0, 65535, 0], // 0000 - FFFF
+    [65536, 1114111, 1] // 010000 - 10FFFF
+]
+
 /**
  * Procedures:
  * 1. Get what range the hex code falls into
@@ -83,7 +92,7 @@ function computeUTF8(hexCode) {
     console.log("bit8FromDecimal: %o", bit8FromDecimal)
 
     let result = ""
-    let computedBits = new Array(8).fill(0) // Should be [0, 1, 1, 0, 1] format
+    let computedBits = [] // Should be [0, 1, 1, 0, 1] format
     // Map 8 bits from decimal
     if (expectedNoOfBytes === 1) {
         // Assign constant bits to indices
@@ -215,11 +224,114 @@ function computeUTF8(hexCode) {
 }
 
 function computeUTF16(hexCode) {
+    const hasOnlyZeros = /^0*$/.test(hexCode)
+    if (hexCode.length == 0) {
+        console.log("no value. returning input as result")
+        return hexCode
+    }
+    if (hasOnlyZeros) {
+        console.log("hexCode has only zeros. returning input as result")
+        return hexCode
+    }
+    // Normalize hex code. There should be no leading zeros before the actual hex code
+    // E.g 0014 -> 14
+    let isZeros = true
+    let hexCharIndex = 0
+    while (isZeros) {
+        const hexChar = hexCode[hexCharIndex]
+        if (hexChar === "0") {
+            hexCharIndex++
+        } else {
+            isZeros = false
+        }
+    }
+    hexCode = hexCode.substring(hexCharIndex, hexCode.length)
+    if ((hexCode.length % 2) == 1) {
+        hexCode = "0" + hexCode
+    }
+
     console.log("computing %s to utf16", hexCode)
-    return ""
+
+    let computedRange = []
+    const computedDecimal = hexToDecimal(hexCode)
+    console.log("computedDecimal: %o", computedDecimal)
+
+    // Get what range the hex code falls into
+    for (let i = 0;i < utf16Ranges.length;i++) {
+        const range = utf16Ranges[i]
+        const startDecimal = range[0]
+        const endDecimal = range[1]
+        if (computedDecimal >= startDecimal && computedDecimal <= endDecimal) {
+            computedRange = range
+            break
+        }
+    }
+
+    console.log("computedRange: %o", computedRange)
+    const rangeResult = computedRange[2]
+    let bit8FromDecimal = []
+    for (let j = 0;j < hexCode.length;j+=2) {
+        let hex2Vals = hexCode.substring(j, j + 2)
+        for (let k = 0;k < 2;k++) {
+            let hex2Decimal = hexToDecimal(hex2Vals[k])
+            let bit4FromDecimal = decimalTo4bit(hex2Decimal)
+            bit8FromDecimal = bit8FromDecimal.concat(bit4FromDecimal)
+        }
+    }
+    console.log("bit8FromDecimal: %o", bit8FromDecimal)
+
+    let result = ""
+    let computedBits = []
+    if (rangeResult === 0) {
+        computedBits = bit8FromDecimal
+    } else if (rangeResult === 1) {
+        let minuend = hexToDecimal(hexCode)
+        let subtrahend = hexToDecimal("010000")
+        let difference = minuend - subtrahend
+        let diffToBits = decimalToBits(difference)
+        const expectedSize = 20
+        const bitDiff = expectedSize - diffToBits.length
+        for (let p = 0;p < bitDiff;p++) {
+            diffToBits.splice(0, 0, 0)
+        }
+        const topTenBits = diffToBits.slice(0, 10)
+        const lowTenBits = diffToBits.slice(10, diffToBits.length)
+        const topTenDecimal = bitsToDecimal(topTenBits)
+        const lowTenDecimal = bitsToDecimal(lowTenBits)
+        const d800Decimal = hexToDecimal("D800")
+        const dc00Decimal = hexToDecimal("DC00")
+        const sumTopTenD800 = d800Decimal + topTenDecimal
+        const sumLowTenDc00 = dc00Decimal + lowTenDecimal
+        const bitsSum1 = decimalToBits(sumTopTenD800)
+        const bitsSum2 = decimalToBits(sumLowTenDc00)
+        computedBits.push(...bitsSum1)
+        computedBits.push(...bitsSum2)
+        console.log("bitsSum1: %o, bitsSum2: %o", bitsSum1, bitsSum2)
+    } else {
+        return "-1"
+    }
+
+    console.log("computedBits: %o", computedBits)
+
+    // Get the equivalent hex letter.
+    // Compute every 4 bits
+    let bits = Object.assign([], computedBits)
+    let chunk = 4
+    let bits4 = []
+    let startIndex = 0
+    while (startIndex < bits.length) {
+        bits4 = bits.slice(startIndex, startIndex + chunk)
+        console.log("bits4: %o", bits4)
+
+        const hexLetter = bit4ToDecimal(bits4)
+        result = result.concat(hexLetter)
+
+        startIndex += 4
+    }
+    return result
 }
 
-/**
+/** 
  * Procedure:
  * 1. Just return the hex code input
  * 
@@ -262,6 +374,45 @@ function hexToDecimal(hexCode) {
     return decimal
 }
 
+function decimalToBits(decimal) {
+    let quotient = decimal
+    let computedBits = [] 
+
+    while (quotient > 0) {
+        let remainder = parseInt(quotient % 2)
+        quotient =  parseInt(quotient / 2)
+        if (remainder != 0) {
+            remainder = 1
+        }
+        computedBits.push(remainder)
+    }
+    return computedBits.reverse()
+}
+
+/**
+ * 
+ * @param {array} bits - E.g [1, 0, 1, 0]
+ */
+function bitsToDecimal(bits) {
+    let decimal = 0
+    let startExp = bits.length - 1
+    for (let i = 0;i < bits.length;i++) {
+        const singleHex = bits[i]
+        let decimalEquivalent = 0
+
+        if (isValidHexNumber(singleHex)) {
+            decimalEquivalent = parseInt(singleHex)
+        } else if (isValidHexLetter(singleHex)) {
+            decimalEquivalent = hexLetterToDecimal(singleHex)
+        }
+
+        const multiplier = Math.pow(2, startExp)
+        const product = decimalEquivalent * multiplier
+        startExp = startExp - 1
+        decimal += product
+    }
+    return decimal
+}
 /**
  * 
  * @param {number} decimal - 0 - 15
