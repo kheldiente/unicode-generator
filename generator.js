@@ -328,6 +328,19 @@ function computeUTF16(hexCode) {
 
         startIndex += 4
     }
+
+    // Format result. Length should be 4
+    const length = result.length
+    const expectedLength = 4
+
+    if (length < expectedLength) {
+        const diff = Math.abs(expectedLength - length)
+        let count = diff
+        while (count > 0) {
+            result = "0" + result
+            count--
+        }
+    }
     return result
 }
 
@@ -344,7 +357,9 @@ function computeUTF32(hexCode) {
         return ""
     }
 
-    const diff = Math.abs(8 - length)
+    // Format result. Length should be 8
+    const expectedLength = 8
+    const diff = Math.abs(expectedLength - length)
     let count = diff
     while (count > 0) {
         hexCode = "0" + hexCode
