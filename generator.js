@@ -33,12 +33,14 @@ const utf16Ranges = [
  *      Else if expected no of bytes === 4:
  *          - 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
  * 5. Convert every 4 bits to hex
+ * 6. Result should not start from 0
+ * @param {string} hexCode - E.g C2A2
  */
 function computeUTF8(hexCode) {
     const hasOnlyZeros = /^0*$/.test(hexCode)
     if (hexCode.length == 0) {
-        console.log("no value. returning 0 as result")
-        return 0
+        console.log("no value. returning empty result")
+        return ""
     }
     if (hasOnlyZeros) {
         console.log("hexCode has only zeros. returning 0 as result")
@@ -237,11 +239,31 @@ function computeUTF8(hexCode) {
     return result
 }
 
+/**
+ * Procedures:
+ * 1. If hex code is in equal or in between 0000 - FFFF then return as it is
+ *    Else if hex code is equal or in between 010000 - 10FFFF:
+ *      - Get decimal values of 010000 and the input
+ *      - Subtract the decimal value of 010000 to the decimal value of the input
+ *      - Convert the decimal difference to bits. Result should have size of 20
+ *      - Get the top and low ten bits from the bits of the difference
+ *      - Get the decimal value of top ten bits, low ten bits.
+ *      - Get the decimal value of D800 and DC00
+ *      - Add the decimal values of top ten bits and D800
+ *      - Add the decimal values of low ten bits and DC00
+ *      - Convert the sum of top ten bits and D800 to binary
+ *      - Convert the sum of low ten bits and DC00 to binary
+ *      - Convert the binary of the sum of top ten bits and D800 to hex characters
+ *      - Convert the binary of the sum of low ten bits and DC00 to hex characters
+ *    Else hex code is out of range
+ * 2. Result should have a length of 4 hex characters.
+ * @param {*} hexCode 
+ */
 function computeUTF16(hexCode) {
     const hasOnlyZeros = /^0*$/.test(hexCode)
     if (hexCode.length == 0) {
-        console.log("no value. returning input as result")
-        return hexCode
+        console.log("no value. returning empty result")
+        return ""
     }
     if (hasOnlyZeros) {
         console.log("hexCode has only zeros. returning input as result")
@@ -359,16 +381,19 @@ function computeUTF16(hexCode) {
 
 /** 
  * Procedure:
- * 1. Just return the hex code input
+ * 1. Copy the hex code
+ * 2. Result should return 8 hex charcters
  * 
  * @param {string} hexCode - E.g 20AC
  */
 function computeUTF32(hexCode) {
-    console.log("computing %s to utf32", hexCode)
     const length = hexCode.length
     if (length === 0) {
+        console.log("no value. returning empty result")
         return ""
     }
+    
+    console.log("computing %s to utf32", hexCode)
 
     // Format result. Length should be 8
     const expectedLength = 8
