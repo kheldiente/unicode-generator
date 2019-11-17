@@ -37,12 +37,12 @@ const utf16Ranges = [
 function computeUTF8(hexCode) {
     const hasOnlyZeros = /^0*$/.test(hexCode)
     if (hexCode.length == 0) {
-        console.log("no value. returning input as result")
-        return hexCode
+        console.log("no value. returning 0 as result")
+        return 0
     }
     if (hasOnlyZeros) {
-        console.log("hexCode has only zeros. returning input as result")
-        return hexCode
+        console.log("hexCode has only zeros. returning 0 as result")
+        return "0"
     }
     // Normalize hex code. There should be no leading zeros before the actual hex code
     // E.g 0014 -> 14
@@ -220,6 +220,20 @@ function computeUTF8(hexCode) {
 
         startIndex += 4
     }
+
+    // Normalize hex code. There should be no leading zeros before the actual hex code
+    // E.g 0014 -> 14
+    let isResultZeros = true
+    let resultCharIndex = 0
+    while (isResultZeros) {
+        const hexChar = result[resultCharIndex]
+        if (hexChar === "0") {
+            resultCharIndex++
+        } else {
+            isResultZeros = false
+        }
+    }
+    result = result.substring(resultCharIndex, result.length)
     return result
 }
 
@@ -332,7 +346,6 @@ function computeUTF16(hexCode) {
     // Format result. Length should be 4
     const length = result.length
     const expectedLength = 4
-
     if (length < expectedLength) {
         const diff = Math.abs(expectedLength - length)
         let count = diff
